@@ -6,143 +6,221 @@
 
 //ctrl + p
 
+#define ENCRYPT "encrypt"
+#define DECRYPT "decrypt"
+
+#define CBC "CBC"
+#define CTR "CTR"
+#define GCM "GCM"
+
+#define encrypt 1
+#define decrypt 0
+
+#define cbc 0
+#define ctr 1
+#define gcm 2
+
+
 using namespace std;
 
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *ciphertext);
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *plaintext);
+int en_de_crypt(int should_encrypt, int mode, unsigned char *key, unsigned char *iv, FILE *fIN, FILE *fOUT);
 
 void handleErrors(void);
 
 
+//TODO
+/*cipher mode ( CBC/CTR/GCM/. . . ),
+ path to keystore
+ key id
+ filename
+ */
 
-int main() {
+/*
+ * Actually key hardcoded
+ *
+ * */
+
+/* 1param - path to file
+ * 2param - encrypt/decrypt
+ * 3param - mode (CBC/CTR/GCM/)
+ * ...
+ * */
+
+
+
+
+int main(int argc, char* argv[]) {
+
+    FILE *fIN, *fOUT;
+    char command [10];
+    char mode [4];
+    int _mode;
+
+    if (argc < 2) {            //TODO 4-5 parameters
+        printf("Usage: /path/to/file/ encrypt/decrypt");
+        return -1;
+    }
+
+    fIN = fopen(argv[1], "rb");
+
+    if(fIN == NULL)
+    {
+
+        printf("Bad /path/to/file/ \n");
+        //fclose(fIN);
+        return -1;
+    }
+
 
     /* A 256 bit key */
-    unsigned char *key = (unsigned char *)"01234567890123456789012345678901";
+    // unsigned char *key = (unsigned char *)"01234567890123456789012345678901";   //TODO
 
     /* A 128 bit IV */
-    unsigned char *iv = (unsigned char *)"01234567890123456";
+    //unsigned char *iv = (unsigned char *)"01234567890123456";   //TODO
 
-    /* Message to be encrypted */
-    unsigned char *plaintext =
-            (unsigned char *)"The quick brown fox jumps over the lazy dog";
-
-    /* Buffer for ciphertext. Ensure the buffer is long enough for the
-       * ciphertext which may be longer than the plaintext, dependant on the
-       * algorithm and mode
-       */
-    unsigned char ciphertext[128];
-
-    /* Buffer for the decrypted text */
-    unsigned char decryptedtext[128];
-
-    int decryptedtext_len, ciphertext_len;
-
-    /* Initialise the library */
-    ERR_load_crypto_strings();
-    OpenSSL_add_all_algorithms();
-    OPENSSL_config(NULL);
+    unsigned char key[] = "thiskeyisverybad";
+    unsigned char iv[] = "dontusethisinput";
 
 
+    sscanf(argv[2], "%s", command );
+    printf("Command %s\n", command);
 
-    ciphertext_len = encrypt(plaintext, strlen((char*) plaintext), key, iv, ciphertext);
+    sscanf(argv[3], "%s", mode );
+    printf("Mode %s\n", mode);
 
-    printf("Ciphertext is:\n");
-    BIO_dump_fp(stdout, (char*)ciphertext, ciphertext_len);
+    if(strcmp(mode, CBC) == 0)
+        _mode = 0;
+    else if(strcmp(mode, CTR) == 0)
+        _mode = 1;
+    else if(strcmp(mode, GCM) == 0)
+        _mode = 2;
+    else
+    {
+        printf("Bad mode '%s'", mode);
+        return -1;
+    }
 
-    decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decryptedtext);
-    decryptedtext[decryptedtext_len] = '\0';
+    if(strcmp(command, ENCRYPT) == 0)
+    {
+        printf("Encrypting...\n");
 
-    printf("Decrypted text is:\n");
-    printf("%s\n", decryptedtext);
+        fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "wb");  //todo???
+        printf("After fOUT creation...\n ");
 
 
+        en_de_crypt(encrypt, _mode, key, iv, fIN, fOUT);//TODO
+        printf("After encryption...\n");
+    /*}
+
+    else if (strcmp(command, DECRYPT) == 0)     //TODO return else if
+    {*/
+        printf("Decrypting...\n ");
+        fclose(fIN);
+        fIN = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "rb");
+        fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Decrypted", "wb");
+        en_de_crypt(decrypt, _mode, key, iv, fIN, fOUT);//TODO
+    }
+
+
+    else
+    {
+        printf("Bad command '%s'", command);
+        return -1;
+    }
+
+    printf("Before cleanup ...\n");
     EVP_cleanup();
     ERR_free_strings();
 
+    printf("Before fclose ...\n");
+
+    fclose(fIN);
+    fclose(fOUT);
+
+    printf("After fclose ...\n");
 
     return 0;
 }
 
 
-int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *ciphertext)
-{
-    EVP_CIPHER_CTX *ctx;
 
-    int len;
-    int ciphertext_len;
+int en_de_crypt(int encryptOrDecrypt, int mode, unsigned char *key, unsigned char *iv, FILE *fIN, FILE *fOUT) {
+    EVP_CIPHER_CTX *ctx;
+    const unsigned BUFSIZE = 4096;
+    int cipher_len;
+
+    unsigned char *read_buf = (unsigned char *) malloc(BUFSIZE);
+    unsigned char *cipher_buf;
+    unsigned blockSize;
 
     /*Create and initialise context*/
 
-    if(!(ctx = EVP_CIPHER_CTX_new()))
+    if (!(ctx = EVP_CIPHER_CTX_new()))           //TODO is necessary???
         handleErrors();
 
-    /* Initialise the encryption operation. IMPORTANT - ensure you use a key
-      * and IV size appropriate for your cipher
-      * In this example we are using 256 bit AES (i.e. a 256 bit key). The
-      * IV size for *most* modes is the same as the block size. For AES this
-      * is 128 bits */
+    if(mode == cbc)
+        EVP_CipherInit(ctx, EVP_aes_128_cbc(), key, iv, encryptOrDecrypt);
+    else if(mode == ctr)
+        EVP_CipherInit(ctx, EVP_aes_128_ctr(), key, iv, encryptOrDecrypt);
+    else if(mode == gcm)
+        EVP_CipherInit(ctx, EVP_aes_128_gcm(), key, iv, encryptOrDecrypt);
 
-    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv  ))
-        handleErrors();
+    printf("\tAfter context creation...\n ");
+    blockSize = EVP_CIPHER_CTX_block_size(ctx);
+    cipher_buf = (unsigned char *) malloc(BUFSIZE + blockSize);
+    printf("\tBefore main loop...\n ");
+    while (1) //TODO change it
+    {
 
-    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len  ))
-        handleErrors();
+        // Read in data in blocks until EOF. Update the ciphering with each read.
 
-    ciphertext_len = len;
+        /*
+         * size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+         *
+         * The  function  fread()  reads  nmemb  elements of data, each size bytes
+         * long, from the stream pointed to by stream, storing them at the location
+         * given by ptr.
+         */
+        printf("\t\tBefore fread...\n ");
+        int numRead = fread(read_buf, sizeof(unsigned char), BUFSIZE, fIN);
+        printf("\t\tAfter fread...\n ");
 
-    /* Finalise the encryption. Further ciphertext bytes may be written at
-    * this stage.
-    */
+        /*int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
+                              const unsigned char *in, int inl)*/
 
-    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
-        handleErrors();
-    ciphertext_len += len;
+        EVP_CipherUpdate(ctx, cipher_buf, &cipher_len, read_buf, numRead);
+        printf("\t\tAfter EVP_CipherUpdate...\n ");
+        /*
+         * size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+         *
+         * The  function  fwrite()  writes nmemb elements of data, each size bytes
+         * long, to the stream pointed to by stream, obtaining them from the
+         * location given by ptr.
+         */
 
+        fwrite(cipher_buf, sizeof(unsigned char), BUFSIZE, fOUT);
+        printf("\t\tAfter fwrite...\n ");
+
+        if (numRead < BUFSIZE)
+            break;
+    }
+    printf("\tAfter main loop...\n ");
+
+
+    EVP_CipherFinal(ctx, cipher_buf, &cipher_len);
+    fwrite(cipher_buf, sizeof(unsigned char), cipher_len, fOUT);
+
+
+    printf("\tBefore free...\n ");
 
     EVP_CIPHER_CTX_cleanup(ctx);
+    free(cipher_buf);
+    free(read_buf);
 
-    return ciphertext_len;
-
-}
-
-
-int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
-            unsigned char *iv, unsigned char *plaintext)
-{
-
-    EVP_CIPHER_CTX *ctx;
-
-    int len;
-    int plaintext_len;
-
-
-    if(!(ctx = EVP_CIPHER_CTX_new()))
-        handleErrors();
-
-    if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv  ))
-        handleErrors();
-
-    if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len  ))
-        handleErrors();
-    plaintext_len = len;
-
-    if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len))
-        handleErrors();
-    plaintext_len += len;
-
-
-    EVP_CIPHER_CTX_cleanup(ctx);
-
-    return plaintext_len;
+    return cipher_len;
 
 }
-
-
 
 
 
@@ -150,6 +228,5 @@ void handleErrors(void)
 {
     ERR_print_errors_fp(stderr);
     abort();
-
 
 }
