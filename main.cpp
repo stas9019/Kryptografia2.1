@@ -56,21 +56,10 @@ int main(int argc, char* argv[]) {
     char mode [4];
     int _mode;
 
-    if (argc < 2) {            //TODO 4-5 parameters
+    if (argc < 5) {            //TODO 4-5 parameters
         printf("Usage: /path/to/file/ [encrypt/decrypt] [mode]");
         return -1;
     }
-
-    fIN = fopen(argv[1], "rb");
-
-    if(fIN == NULL)
-    {
-
-        printf("Bad /path/to/file/ \n");
-        //fclose(fIN);
-        return -1;
-    }
-
 
     /* A 256 bit key */
     // unsigned char *key = (unsigned char *)"01234567890123456789012345678901";   //TODO
@@ -78,13 +67,30 @@ int main(int argc, char* argv[]) {
     /* A 128 bit IV */
     //unsigned char *iv = (unsigned char *)"01234567890123456";   //TODO
 
-    unsigned char key[] = "thiskeyisverybad";
+    //unsigned char key[] = "thiskeyisverybad";
     unsigned char iv[] = "dontusethisinput";
+    unsigned char key[256];
 
 
     sscanf(argv[2], "%s", command );
 
     sscanf(argv[3], "%s", mode );
+
+    sscanf(argv[4], "%s", key );
+
+
+    fIN = fopen(argv[1], "rb");
+
+
+    if(fIN == NULL)
+    {
+
+        printf("Bad /path/to/file/ \n");
+        fclose(fIN);
+        return -1;
+    }
+
+
 
     if(strcmp(mode, CBC) == 0)
         _mode = 0;
@@ -101,21 +107,21 @@ int main(int argc, char* argv[]) {
     if(strcmp(command, ENCRYPT) == 0)
     {
         printf("Encrypting...\n");
-
+        //fIN = fopen(argv[1], "rb");
         fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "wb");  //todo???
 
 
         en_de_crypt(encrypt, _mode, key, iv, fIN, fOUT);//TODO
-
+        printf("Encrypted...\n");
     }
 
     else if (strcmp(command, DECRYPT) == 0)     //TODO return else if
     {
-        printf("Decrypting...\n ");
-        fclose(fIN);
-        fIN = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "rb");
+        printf("Decrypting...\n");
+        //fIN = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "rb");
         fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Decrypted", "wb");
         en_de_crypt(decrypt, _mode, key, iv, fIN, fOUT);//TODO
+        printf("Decrypted...\n");
     }
 
 
