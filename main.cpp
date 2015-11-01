@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     int _mode;
 
     if (argc < 2) {            //TODO 4-5 parameters
-        printf("Usage: /path/to/file/ encrypt/decrypt");
+        printf("Usage: /path/to/file/ [encrypt/decrypt] [mode]");
         return -1;
     }
 
