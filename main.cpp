@@ -29,26 +29,15 @@ int en_de_crypt(int should_encrypt, int mode, unsigned char *key, unsigned char 
 void handleErrors(void);
 
 
-//TODO
-/*cipher mode ( CBC/CTR/GCM/. . . ),
- path to keystore
- key id
- filename
- */
 
 /*
  * Actually key hardcoded
- *
  * */
 
 /* 1param - path to file
  * 2param - encrypt/decrypt
  * 3param - mode (CBC/CTR/GCM/)
- * ...
  * */
-
-
-
 
 int main(int argc, char* argv[]) {
 
@@ -84,10 +73,8 @@ int main(int argc, char* argv[]) {
 
 
     sscanf(argv[2], "%s", command );
-    printf("Command %s\n", command);
 
     sscanf(argv[3], "%s", mode );
-    printf("Mode %s\n", mode);
 
     if(strcmp(mode, CBC) == 0)
         _mode = 0;
@@ -103,19 +90,18 @@ int main(int argc, char* argv[]) {
 
     if(strcmp(command, ENCRYPT) == 0)
     {
-        printf("Encrypting...\n");
+
 
         fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "wb");  //todo???
-        printf("After fOUT creation...\n ");
 
 
         en_de_crypt(encrypt, _mode, key, iv, fIN, fOUT);//TODO
-        printf("After encryption...\n");
+
     /*}
 
     else if (strcmp(command, DECRYPT) == 0)     //TODO return else if
     {*/
-        printf("Decrypting...\n ");
+
         fclose(fIN);
         fIN = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "rb");
         fOUT = fopen("/home/stas/ClionProjects/Kryptografia2.1/Decrypted", "wb");
@@ -129,16 +115,15 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    printf("Before cleanup ...\n");
+
     EVP_cleanup();
     ERR_free_strings();
 
-    printf("Before fclose ...\n");
+
 
     fclose(fIN);
     fclose(fOUT);
 
-    printf("After fclose ...\n");
 
     return 0;
 }
@@ -166,10 +151,10 @@ int en_de_crypt(int encryptOrDecrypt, int mode, unsigned char *key, unsigned cha
     else if(mode == gcm)
         EVP_CipherInit(ctx, EVP_aes_128_gcm(), key, iv, encryptOrDecrypt);
 
-    printf("\tAfter context creation...\n ");
+
     blockSize = EVP_CIPHER_CTX_block_size(ctx);
     cipher_buf = (unsigned char *) malloc(BUFSIZE + blockSize);
-    printf("\tBefore main loop...\n ");
+
     while (1) //TODO change it
     {
 
@@ -182,15 +167,14 @@ int en_de_crypt(int encryptOrDecrypt, int mode, unsigned char *key, unsigned cha
          * long, from the stream pointed to by stream, storing them at the location
          * given by ptr.
          */
-        printf("\t\tBefore fread...\n ");
+
         int numRead = fread(read_buf, sizeof(unsigned char), BUFSIZE, fIN);
-        printf("\t\tAfter fread...\n ");
 
         /*int EVP_CipherUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl,
                               const unsigned char *in, int inl)*/
 
         EVP_CipherUpdate(ctx, cipher_buf, &cipher_len, read_buf, numRead);
-        printf("\t\tAfter EVP_CipherUpdate...\n ");
+
         /*
          * size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
          *
@@ -200,19 +184,15 @@ int en_de_crypt(int encryptOrDecrypt, int mode, unsigned char *key, unsigned cha
          */
 
         fwrite(cipher_buf, sizeof(unsigned char), BUFSIZE, fOUT);
-        printf("\t\tAfter fwrite...\n ");
 
         if (numRead < BUFSIZE)
             break;
     }
-    printf("\tAfter main loop...\n ");
 
 
     EVP_CipherFinal(ctx, cipher_buf, &cipher_len);
     fwrite(cipher_buf, sizeof(unsigned char), cipher_len, fOUT);
 
-
-    printf("\tBefore free...\n ");
 
     EVP_CIPHER_CTX_cleanup(ctx);
     free(cipher_buf);
