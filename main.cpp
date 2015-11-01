@@ -1,7 +1,6 @@
 #include <iostream>
 #include <openssl/evp.h>
 #include <openssl/err.h>
-#include <openssl/conf.h>
 #include <string.h>
 
 //ctrl + p
@@ -108,10 +107,10 @@ int main(int argc, char* argv[]) {
 
         en_de_crypt(encrypt, _mode, key, iv, fIN, fOUT);//TODO
 
-    /*}
+    }
 
     else if (strcmp(command, DECRYPT) == 0)     //TODO return else if
-    {*/
+    {
         printf("Decrypting...\n ");
         fclose(fIN);
         fIN = fopen("/home/stas/ClionProjects/Kryptografia2.1/Encrypted", "rb");
@@ -147,7 +146,7 @@ int en_de_crypt(int encryptOrDecrypt, int mode, unsigned char *key, unsigned cha
 
     unsigned char *read_buf = (unsigned char *) malloc(BUFSIZE);
     unsigned char *cipher_buf;
-    unsigned blockSize;
+    int blockSize;
 
     /*Create and initialise context*/
 
