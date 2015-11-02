@@ -6,8 +6,7 @@
 if [ $# -eq 0 ];then	
 	echo "Usage:" "[keystorePath]" "[keyID]" "[filePath]" "[action]" "[mode]"
 	echo "Example"
-	echo "/home/stas/ClionProjects/Keystore Encrypted /home/stas/ClionProjects/Kryptografia2.1/Encrypted decrypt CBC
-"
+	echo "~/ClionProjects/Keystore Encrypted ~/ClionProjects/Kryptografia2.1/Encrypted decrypt CBC"
 	exit
 fi
 
